@@ -10,7 +10,7 @@ namespace TaskManager2
         static void Main(string[] args)
         {
             // Create a scheduler that uses two threads.
-       LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(2);
+       LimitedTaskScheduler lcts = new LimitedTaskScheduler(2);
        List<Task> tasks = new List<Task>();
 
        // Create a TaskFactory and pass it our custom scheduler.

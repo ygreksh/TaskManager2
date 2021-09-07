@@ -7,7 +7,7 @@ namespace TaskManager2
 {
     // Provides a task scheduler that ensures a maximum concurrency level while
     // running on top of the thread pool.
-    public class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
+    public class LimitedTaskScheduler : TaskScheduler
     {
         // Indicates whether the current thread is processing work items.
    [ThreadStatic]
@@ -23,7 +23,7 @@ namespace TaskManager2
    private int _delegatesQueuedOrRunning = 0;
 
    // Creates a new instance with the specified degree of parallelism.
-   public LimitedConcurrencyLevelTaskScheduler(int maxDegreeOfParallelism)
+   public LimitedTaskScheduler(int maxDegreeOfParallelism)
    {
        if (maxDegreeOfParallelism < 1) throw new ArgumentOutOfRangeException("maxDegreeOfParallelism");
        _maxDegreeOfParallelism = maxDegreeOfParallelism;
@@ -83,9 +83,11 @@ namespace TaskManager2
        }, null);
    }
 
+   
    // Attempts to execute the specified task on the current thread.
    protected sealed override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
    {
+       /*
        // If this thread isn't already processing a task, we don't support inlining
        if (!_currentThreadIsProcessingItems) return false;
 
@@ -98,12 +100,15 @@ namespace TaskManager2
              return false;
        else
           return base.TryExecuteTask(task);
+       */
+       return false;
    }
 
    // Attempt to remove a previously scheduled task from the scheduler.
    protected sealed override bool TryDequeue(Task task)
    {
-       lock (_tasks) return _tasks.Remove(task);
+       //lock (_tasks) return _tasks.Remove(task);
+       return false;
    }
 
    // Gets the maximum concurrency level supported by this scheduler.
@@ -112,6 +117,7 @@ namespace TaskManager2
    // Gets an enumerable of the tasks currently scheduled on this scheduler.
    protected sealed override IEnumerable<Task> GetScheduledTasks()
    {
+       /*
        bool lockTaken = false;
        try
        {
@@ -123,6 +129,8 @@ namespace TaskManager2
        {
            if (lockTaken) Monitor.Exit(_tasks);
        }
+       */
+       return null;
    }
     }
 }
