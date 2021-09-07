@@ -5,28 +5,26 @@ using System.Threading.Tasks;
 
 namespace TaskManager2
 {
-    // Provides a task scheduler that ensures a maximum concurrency level while
-    // running on top of the thread pool.
     public class LimitedTaskScheduler : TaskScheduler
-    {
-        // Indicates whether the current thread is processing work items.
-   [ThreadStatic]
-   private static bool _currentThreadIsProcessingItems;
+    { 
+        // Флаг занятости потока задачами true - выполняется задача, false - поток свободен.
+        private static bool _ThreadIsWorking;
 
-  // The list of tasks to be executed
-   private readonly LinkedList<Task> _tasks = new LinkedList<Task>(); // protected by lock(_tasks)
+        // список задач ожидающих выполнение 
+        private LinkedList<Task> _tasks = new LinkedList<Task>();
 
-   // The maximum concurrency level allowed by this scheduler.
-   private readonly int _maxDegreeOfParallelism;
-
-   // Indicates whether the scheduler is currently processing work items.
-   private int _delegatesQueuedOrRunning = 0;
+        // Максимальное количество потоков.
+        private int _maxCountThreads;
+        
+        // Indicates whether the scheduler is currently processing work items.
+        // Количество текущих задач
+        private int _tasksNowCounter = 0;
 
    // Creates a new instance with the specified degree of parallelism.
-   public LimitedTaskScheduler(int maxDegreeOfParallelism)
+   public LimitedTaskScheduler(int maxCountThreads)
    {
-       if (maxDegreeOfParallelism < 1) throw new ArgumentOutOfRangeException("maxDegreeOfParallelism");
-       _maxDegreeOfParallelism = maxDegreeOfParallelism;
+       if (maxCountThreads < 1) throw new ArgumentOutOfRangeException("maxCountThreads");
+       _maxCountThreads = maxCountThreads;
    }
 
    // Queues a task to the scheduler.
@@ -34,12 +32,12 @@ namespace TaskManager2
    {
       // Add the task to the list of tasks to be processed.  If there aren't enough
       // delegates currently queued or running to process tasks, schedule another.
-       lock (_tasks)
+       lock (_tasks)    
        {
            _tasks.AddLast(task);
-           if (_delegatesQueuedOrRunning < _maxDegreeOfParallelism)
+           if (_tasksNowCounter < _maxCountThreads)
            {
-               ++_delegatesQueuedOrRunning;
+               ++_tasksNowCounter;
                NotifyThreadPoolOfPendingWork();
            }
        }
@@ -48,38 +46,36 @@ namespace TaskManager2
    // Inform the ThreadPool that there's work to be executed for this scheduler.
    private void NotifyThreadPoolOfPendingWork()
    {
-       ThreadPool.UnsafeQueueUserWorkItem(_ =>
+       ThreadPool.QueueUserWorkItem(_ =>
        {
-           // Note that the current thread is now processing work items.
-           // This is necessary to enable inlining of tasks into this thread.
-           _currentThreadIsProcessingItems = true;
+           // текущий поток работает и выполняет задачу.
+           _ThreadIsWorking = true;
            try
            {
-               // Process all available items in the queue.
+               // цикл обработки всех доступных задач в очереди.
                while (true)
                {
                    Task item;
                    lock (_tasks)
                    {
-                       // When there are no more items to be processed,
-                       // note that we're done processing, and get out.
+                       // если задач в очереди нет - выход из цикла
                        if (_tasks.Count == 0)
                        {
-                           --_delegatesQueuedOrRunning;
+                           --_tasksNowCounter;
                            break;
                        }
 
-                       // Get the next item from the queue
+                       // получение следующей задачи из очереди 
                        item = _tasks.First.Value;
                        _tasks.RemoveFirst();
                    }
 
-                   // Execute the task we pulled out of the queue
+                   // запуск на выполнение задачи
                    base.TryExecuteTask(item);
                }
            }
-           // We're done processing items on the current thread
-           finally { _currentThreadIsProcessingItems = false; }
+           // Поток закончил и работу и теперь нерабочий 
+           finally { _ThreadIsWorking = false; }
        }, null);
    }
 
@@ -112,7 +108,7 @@ namespace TaskManager2
    }
 
    // Gets the maximum concurrency level supported by this scheduler.
-   public sealed override int MaximumConcurrencyLevel { get { return _maxDegreeOfParallelism; } }
+   public sealed override int MaximumConcurrencyLevel { get { return _maxCountThreads; } }
 
    // Gets an enumerable of the tasks currently scheduled on this scheduler.
    protected sealed override IEnumerable<Task> GetScheduledTasks()
