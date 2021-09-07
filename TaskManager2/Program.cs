@@ -24,9 +24,9 @@ namespace TaskManager2
        for (int tCtr = 0; tCtr <= 4; tCtr++) {
           int iteration = tCtr;
           Task t = factory.StartNew(() => {
-                                       for (int i = 0; i < 1000; i++) {
+                                       for (int i = 0; i < 3; i++) {
                                           lock (lockObj) {
-                                             Console.Write("{0} in task t-{1} on thread {2}   ",
+                                             Console.Write("{0} in task t-{1} on thread {2}; ",
                                                            i, iteration, Thread.CurrentThread.ManagedThreadId);
                                              outputItem++;
                                              if (outputItem % 3 == 0)
@@ -40,8 +40,8 @@ namespace TaskManager2
       for (int tCtr = 0; tCtr <= 4; tCtr++) {
          int iteration = tCtr;
          Task t1 = factory.StartNew(() => {
-                                       for (int outer = 0; outer <= 10; outer++) {
-                                          for (int i = 0x21; i <= 0x7E; i++) {
+                                       for (int outer = 0; outer <= 3; outer++) {
+                                          for (int i = 0x21; i <= 0x25; i++) {
                                              lock (lockObj) {
                                                 Console.Write("'{0}' in task t1-{1} on thread {2}   ",
                                                               Convert.ToChar(i), iteration, Thread.CurrentThread.ManagedThreadId);
