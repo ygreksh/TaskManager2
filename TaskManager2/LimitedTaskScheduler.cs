@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace TaskManager2
 {
+    //Кастомный планировщик задач на основе стандартного
     public class LimitedTaskScheduler : TaskScheduler
     { 
         // Флаг занятости потока задачами true - выполняется задача, false - поток свободен.
@@ -16,22 +17,19 @@ namespace TaskManager2
         // Максимальное количество потоков.
         private int _maxCountThreads;
         
-        // Indicates whether the scheduler is currently processing work items.
         // Количество текущих задач
         private int _tasksNowCounter = 0;
 
-   // Creates a new instance with the specified degree of parallelism.
+   // Конструктор. Параметр = максимальное количество потоков.
    public LimitedTaskScheduler(int maxCountThreads)
    {
        if (maxCountThreads < 1) throw new ArgumentOutOfRangeException("maxCountThreads");
        _maxCountThreads = maxCountThreads;
    }
 
-   // Queues a task to the scheduler.
+   // Добавление задач в очередь.
    protected sealed override void QueueTask(Task task)
    {
-      // Add the task to the list of tasks to be processed.  If there aren't enough
-      // delegates currently queued or running to process tasks, schedule another.
        lock (_tasks)    
        {
            _tasks.AddLast(task);
@@ -43,7 +41,7 @@ namespace TaskManager2
        }
    }
 
-   // Inform the ThreadPool that there's work to be executed for this scheduler.
+   // Запуск на выполнение очереди задач.
    private void NotifyThreadPoolOfPendingWork()
    {
        ThreadPool.QueueUserWorkItem(_ =>
@@ -74,7 +72,7 @@ namespace TaskManager2
                    base.TryExecuteTask(item);
                }
            }
-           // Поток закончил и работу и теперь нерабочий 
+           // Поток закончил работу и теперь он нерабочий 
            finally { _ThreadIsWorking = false; }
        }, null);
    }
@@ -100,20 +98,20 @@ namespace TaskManager2
        return false;
    }
 
-   // Attempt to remove a previously scheduled task from the scheduler.
+   // удаление задачи из очереди.
    protected sealed override bool TryDequeue(Task task)
    {
-       //lock (_tasks) return _tasks.Remove(task);
+       lock (_tasks) return _tasks.Remove(task);
        return false;
    }
 
    // Gets the maximum concurrency level supported by this scheduler.
    public sealed override int MaximumConcurrencyLevel { get { return _maxCountThreads; } }
 
-   // Gets an enumerable of the tasks currently scheduled on this scheduler.
+   // получение очереди задач в виде списка
    protected sealed override IEnumerable<Task> GetScheduledTasks()
    {
-       /*
+       
        bool lockTaken = false;
        try
        {
@@ -125,8 +123,7 @@ namespace TaskManager2
        {
            if (lockTaken) Monitor.Exit(_tasks);
        }
-       */
-       return null;
+       
    }
     }
 }

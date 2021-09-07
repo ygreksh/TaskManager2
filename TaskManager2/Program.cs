@@ -9,17 +9,15 @@ namespace TaskManager2
     {
         static void Main(string[] args)
         {
-            // Create a scheduler that uses two threads.
+            // Кастомный планировщик с количеством потоков = 3.
             
             LimitedTaskScheduler lcts = new LimitedTaskScheduler(3);
             List<Task> tasks = new List<Task>();
 
-            // Create a TaskFactory and pass it our custom scheduler.
+            // Фабрика с кастомным планировщиком
             TaskFactory factory = new TaskFactory(lcts);
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            // Use our factory to run a set of tasks.
-            Object locker = new Object();
 
             for (int i = 1; i <= 5; i++)
             {
@@ -27,28 +25,16 @@ namespace TaskManager2
                int taskNumber = i;
                Task t = factory.StartNew(() => 
                {
-             /*
-             for (int i = 0; i < 2; i++)
-             {
-                lock (locker) {
-                   Console.WriteLine("{0} in task t-{1} on thread {2}; ",
-                      i, iteration, Thread.CurrentThread.ManagedThreadId);
-                   
-                }
-             }
-             */
-             Console.WriteLine($"Задача {taskNumber} началась в потоке {Thread.CurrentThread.ManagedThreadId}");
-             Thread.Sleep(random.Next(0,3000));
-             Console.WriteLine($"Задача {taskNumber} выполняется в потоке {Thread.CurrentThread.ManagedThreadId}");
-             Thread.Sleep(random.Next(0,3000));
-             Console.WriteLine($"Задача {taskNumber} завершилась в потоке {Thread.CurrentThread.ManagedThreadId}");
-             //Thread.Sleep(random.Next(0,2000));
+                Console.WriteLine($"Задача {taskNumber} началась в потоке {Thread.CurrentThread.ManagedThreadId}");
+                Thread.Sleep(random.Next(0,3000));
+                Console.WriteLine($"Задача {taskNumber} выполняется в потоке {Thread.CurrentThread.ManagedThreadId}");
+                Thread.Sleep(random.Next(0,3000));
+                Console.WriteLine($"Задача {taskNumber} завершилась в потоке {Thread.CurrentThread.ManagedThreadId}");
+                //Thread.Sleep(random.Next(0,2000));
                }, cts.Token);
                tasks.Add(t);
             }
-      // Use it to run a second set of tasks.
-      
-
+            //Подождать и завершить Main только после завершения всех задач
             Task.WaitAll(tasks.ToArray());
             cts.Dispose();
             Console.WriteLine("\n\nSuccessful completion.");
